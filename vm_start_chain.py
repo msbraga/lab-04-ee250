@@ -2,6 +2,9 @@
 Run vm_pub.py in a separate terminal on your VM."""
 
 import paho.mqtt.client as mqtt
+import time
+from datetime import datetime
+import socket
 
 """This function (or "callback") will be executed when this client receives 
 a connection acknowledgement packet response from the server. """
@@ -14,14 +17,11 @@ def on_connect(client, userdata, flags, rc):
 
     print("Connected to server (i.e., broker) with result code "+str(rc))
     #replace user with your USC username in all subscriptions
-    client.subscribe("msbraga/ipinfo")
-    client.subscribe("msbraga/date")
-    client.subscribe("msbraga/time")
+    client.subscribe("msbraga/ping")
+
     
     #Add the custom callbacks by indicating the topic and the name of the callback handle
-    client.message_callback_add("msbraga/ipinfo", on_message_from_ipinfo)
-    client.message_callback_add("msbraga/date", on_message_from_date)
-    client.message_callback_add("msbraga/time", on_message_from_time)
+    client.message_callback_add("msbraga/ping", on_message_from_ping)
 
 
 """This object (functions are objects!) serves as the default callback for 
@@ -32,17 +32,21 @@ def on_message(client, userdata, msg):
     print("Default callback - topic: " + msg.topic + "   msg: " + str(msg.payload, "utf-8"))
 
 #Custom message callback.
-def on_message_from_ipinfo(client, userdata, message):
-   print("Custom callback  - IP Message: "+message.payload.decode())
-def on_message_from_date(client, userdata, message):
-   print("Custom callback  - Date Message: "+message.payload.decode())
-def on_message_from_time(client, userdata, message):
-   print("Custom callback  - Time Message: "+message.payload.decode())
+def on_message_from_ping(client, userdata, message):
+   n=int(message.payload.decode())
+   n=n+1
+   client.publish("msbraga/pong", n)
+   print(n)
+   time.sleep(1)
+   
+   
 
 
 
 
 if __name__ == '__main__':
+
+    n=0
     
     #create a client object
     client = mqtt.Client()
@@ -74,4 +78,7 @@ if __name__ == '__main__':
     which will block forever. This function processes network traffic (socket 
     programming is used under the hood), dispatches callbacks, and handles 
     reconnecting."""
+        
+    client.publish("msbraga/pong", n)
+    
     client.loop_forever()
